@@ -250,40 +250,40 @@ sub profile {
 # away with doing this here since we are only dealing with opqaue bytes.
 {
 
-    my $str_4kb = ('1') x 4096;
-    my $str_500kb = ('1') x 512_000;
-    open( my $fh, '<', \$str_4kb);
-    open( my $fh2, '<', \$str_500kb);
+    my $str_4kib = ('1') x (4 * 1024);
+    my $str_500kib = ('1') x (500 * 1024);
+    open( my $fh, '<', \$str_4kib);
+    open( my $fh2, '<', \$str_500kib);
 
     # Prepare for reads
     my $grid = $db->get_gridfs;
-    $grid->insert($fh, {"filename" => "4kb"});
-    $grid->insert($fh2, {"filename" => "500kb"});
+    $grid->insert($fh, {"filename" => "4KiB"});
+    $grid->insert($fh2, {"filename" => "500KiB"});
 
     timethese( -2, {
 
         "insert 4kb file" => sub {
 
-            open( my $tempfh, '<', \$str_4kb);
+            open( my $tempfh, '<', \$str_4kib);
             profile( sub { $grid->insert($tempfh) } );
         },
 
         "insert 500kb file" => sub {
 
-            open( my $tempfh, '<', \$str_500kb);
+            open( my $tempfh, '<', \$str_500kib);
             profile( sub { $grid->insert($tempfh) } );
         },
 
         "find 4kb file" => sub {
 
-            open( my $tempfh, '<', \$str_4kb);
-            profile( sub { $grid->find_one({filename => "4kb"}) } );
+            open( my $tempfh, '<', \$str_4kib);
+            profile( sub { $grid->find_one({filename => "4KiB"}) } );
         },
 
         "find 500kb file" => sub {
 
-            open( my $tempfh, '<', \$str_500kb);
-            profile( sub { $grid->find_one({filename => "500kb"}) } );
+            open( my $tempfh, '<', \$str_500kib);
+            profile( sub { $grid->find_one({filename => "500KiB"}) } );
         },
     });
 }
