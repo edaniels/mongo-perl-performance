@@ -38,7 +38,7 @@ bench.pl [options]
 
 Options:
     -profile            enable profiling
-    -dataset            dataset to use
+    -dataset            dataset to use. expects a schema to exist in the form of dataset.schema.json
     -lines              lines to read from dataset (default: 1000)
 
 =cut
@@ -47,12 +47,6 @@ GetOptions(
     "dataset=s" => \$dataset_path,
     "lines=i" => \$lines_to_read,
 ) or pod2usage(2);
-
-my %dataset;
-my %scheme = (
-
-    find_spec => {source=>"web"}
-);
 
 my $client = MongoDB::MongoClient->new;
 my $db = $client->get_database("benchdb");
@@ -65,8 +59,8 @@ print "Driver $MongoDB::VERSION, Perl v$], MongoDB $server_version\n";
 
 if ($dataset_path) {
 
-    my ($dataset_size, @data) = get_data_from_json($dataset_path, $lines_to_read);
-    %dataset = create_dataset(\@data);
+    my ($dataset_size, $schema, @data) = get_data_from_json($dataset_path, $lines_to_read);
+    my %dataset = create_dataset(\@data);
     print "Dataset: " . file($dataset_path)->basename . ", size: $dataset_size\n";
 
     # Fill db for read with dataset
@@ -155,7 +149,7 @@ if ($dataset_path) {
             },
 
             "find_one query" => sub {
-                profile( sub { $read_coll->find_one($scheme{find_spec}) } );
+                profile( sub { $read_coll->find_one($schema->{find_spec}) } );
             },
 
             "find all and iterate" => sub { profile( sub {
@@ -166,7 +160,7 @@ if ($dataset_path) {
 
             "find on query and iterate" => sub { profile( sub {
 
-                my $cursor = $read_coll->find($scheme{find_spec});
+                my $cursor = $read_coll->find($schema->{find_spec});
                 () while $cursor->next;
             })},
         });
@@ -474,14 +468,24 @@ sub get_data_from_json {
     die "lines must be greater than 0 or -1 (no limit)" unless $_[1] > 0 || $_[1] == -1;
     my $file_path = $_[0];
     my $line_limit = $_[1] == -1 ? 0+'inf' : $_[1];
+    my $schema_path = $file_path;
+    $schema_path =~ s/(\.json)$/.schema$1/;
 
-    open(my $fh, "<:encoding(UTF-8)", $file_path) or die("Can't open $file_path: $!\n");
+    open(my $dataset_fh, "<:encoding(UTF-8)", $file_path) or die("Can't open $file_path: $!\n");
+    open(my $schema_fh, "<:encoding(UTF-8)", $schema_path) or die("Can't open $schema_path: $!\n");
+
+    # Read schema
+    my $schema;
+    {
+        local $/;
+        $schema = decode_json(<$schema_fh>);
+    }
 
     my (@docs, $smallest_doc, $largest_doc);
 
     # Collect all documents
     my $line_num;
-    for ($line_num = 0, my $line = <$fh>; $line_num < $line_limit && $line; $line = <$fh>, $line_num++) {
+    for ($line_num = 0, my $line = <$dataset_fh>; $line_num < $line_limit && $line; $line = <$dataset_fh>, $line_num++) {
 
         $smallest_doc ||= $line;
         $largest_doc ||= $line;
@@ -496,7 +500,7 @@ sub get_data_from_json {
 
     push @docs, decode_json($smallest_doc);
     push @docs, decode_json($largest_doc);
-    return $line_num, @docs;
+    return $line_num, $schema, @docs;
 }
 
 sub create_dataset {
