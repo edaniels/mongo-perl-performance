@@ -1,10 +1,11 @@
 # Installation
 
-* Fill me in. Need to make sure user has deps
+	perl Makefile.PL
+	make install
 
 # Usage
 
-	bench.pl [-dataset file.json] [-profile]
+	mongo-bench.pl [-dataset file.json] [-profile]
 	
 * **dataset** - Represents the dataset to use for the benchmark. Needs to be in JSON format delimited by new lines
 	* Leaving out dataset will cause benchmarks to run on known data (e.g. BSON encoding/decoding, GridFS)

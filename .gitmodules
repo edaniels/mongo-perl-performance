@@ -1,3 +1,0 @@
-[submodule "mongo-perl-driver"]
-	path = mongo-perl-driver
-	url = git@github.com:mongodb/mongo-perl-driver.git

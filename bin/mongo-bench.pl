@@ -1,3 +1,5 @@
+#!/usr/bin/env perl
+
 use 5.008;
 use strict;
 use warnings;
@@ -9,6 +11,9 @@ use JSON::XS;
 use Pod::Usage;
 
 use MongoDB;
+
+use version;
+our $VERSION = 'v0.0.1';
 
 use constant {
 
