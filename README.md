@@ -4,11 +4,12 @@
 
 # Usage
 
-	bench.pl <-dataset file.json> [-profile]
+	bench.pl [-dataset file.json] [-profile]
 	
 * **dataset** - Represents the dataset to use for the benchmark. Needs to be in JSON format delimited by new lines
-* **profile** - Setting profile will enable the profiler.
-	* **NOTE:** expect slower benchmarks while profiling is enabled.
+	* Leaving out dataset will cause benchmarks to run on known data (e.g. BSON encoding/decoding, GridFS)
+* **profile** - Setting profile will enable the profiler
+	* **NOTE:** expect slower benchmarks while profiling is enabled
 
 # Profiler
 
