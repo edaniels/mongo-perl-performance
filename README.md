@@ -1,3 +1,8 @@
+# Requirements
+
+	* Module::Install is required to build and install the project
+	* mongod instance running at localhost:27017 (TODO: Let user specify via env/arg)
+
 # Installation
 
 	perl Makefile.PL
