@@ -15,8 +15,6 @@ requires 'Benchmark';
 requires 'Devel::NYTProf';
 requires 'JSON::XS';
 requires 'Pod::Usage';
-requires 'Path::Class';
-requires 'Cwd';
 requires 'MongoDB';
 requires 'version';
 
