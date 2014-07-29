@@ -19,26 +19,17 @@
 use 5.008;
 use strict;
 use warnings;
-use Benchmark qw/:all/;
-use Path::Class qw/file/;
-use Devel::NYTProf;
-use Getopt::Long;
-use IO::Handle qw//;
-use JSON::XS;
-use MongoDB;
-use Pod::Usage;
-use version;
-our $VERSION = 'v0.0.1';
 
 use constant {
 
     MOST_DOCS => 1000,
     SOME_DOCS => 100,
+    CPU_RUN_TIME => 2,
 };
 
-my $profile = '';
-my $dataset_path = '';
-my $lines_to_read = MOST_DOCS;
+my ($profile, $bench, $dataset_path, $lines_to_read, $profile_out, $bench_out);
+
+BEGIN {
 
 =head1 SYNOPSIS
 
@@ -46,15 +37,43 @@ bench.pl [options]
 
 Options:
     -profile            enable profiling
+    -profileout         file to output profiling data to (default : mongo-perl-prof.out)
+    -bench              enable benchmarking
+    -benchout           file to output benchmark data to (default: mongo-perl-bench.csv)
     -dataset            dataset to use. expects a schema to exist in the form of dataset.schema.json
     -lines              lines to read from dataset (default: 1000)
 
 =cut
-GetOptions(
-    "profile" => \$profile,
-    "dataset=s" => \$dataset_path,
-    "lines=i" => \$lines_to_read,
-) or pod2usage(2);
+
+    $profile = '';
+    $bench = '';
+    $dataset_path = '';
+    $lines_to_read = MOST_DOCS;
+    $profile_out = 'mongo-perl-prof.out';
+    $bench_out = 'mongo-perl-bench.csv';
+
+    use Getopt::Long;
+    use Pod::Usage;
+    GetOptions(
+        "profile" => \$profile,
+        "profileout=s" => \$profile_out,
+        "bench" => \$bench,
+        "benchout=s" => \$bench_out,
+        "dataset=s" => \$dataset_path,
+        "lines=i" => \$lines_to_read,
+    ) or pod2usage(2);
+
+    $ENV{NYTPROF} = "file=$profile_out";
+}
+
+use Devel::NYTProf;
+use Benchmark qw/:all/;
+use Path::Class qw/file/;
+use IO::Handle qw//;
+use JSON::XS;
+use MongoDB;
+use version;
+our $VERSION = 'v0.0.1';
 
 my $client = MongoDB::MongoClient->new;
 my $db = $client->get_database("benchdb");
@@ -65,6 +84,8 @@ my $build = $client->get_database( 'admin' )->get_collection( '$cmd' )->find_one
 my ($version_str) = $build->{version} =~ m{^([0-9.]+)};
 my $server_version = version->parse("v$version_str");
 print "Driver $MongoDB::VERSION, Perl v$], MongoDB $server_version\n";
+
+my %bench_results; # treated as a global
 
 if ($dataset_path) {
 
@@ -108,12 +129,7 @@ if ($dataset_path) {
 
         for my $benchmark (@$data) {
 
-            my $insert_func = sub {
-
-                profile(sub { $insert_coll->insert($benchmark->[1]) });
-            };
-
-            timethis(-2, $insert_func, $benchmark->[0]);
+            run_test($benchmark->[0], sub { $insert_coll->insert($benchmark->[1]) } );
         }
     }
 
@@ -123,27 +139,21 @@ if ($dataset_path) {
     {
         my $read_coll = $db->get_collection("read");
 
-        timethese( -2, {
 
-            "find_one simple" => sub {
-                profile( sub { $read_coll->find_one } );
-            },
+        run_test("find_one simple", sub { $read_coll->find_one } );
 
-            "find_one query" => sub {
-                profile( sub { $read_coll->find_one($schema->{find_spec}) } );
-            },
+        run_test("find_one query", sub { $read_coll->find_one($schema->{find_spec}) } );
 
-            "find all and iterate" => sub { profile( sub {
+        run_test("find all and iterate", sub {
 
-                my $cursor = $read_coll->find();
-                () while $cursor->next;
-            })},
+            my $cursor = $read_coll->find();
+            () while $cursor->next;
+        });
 
-            "find on query and iterate" => sub { profile( sub {
+        run_test("find on query and iterate", sub {
 
-                my $cursor = $read_coll->find($schema->{find_spec});
-                () while $cursor->next;
-            })},
+            my $cursor = $read_coll->find($schema->{find_spec});
+            () while $cursor->next;
         });
     }
 
@@ -152,24 +162,13 @@ if ($dataset_path) {
         # We're about to clobber read so these tests should be performed last.
         my $read_coll = $db->get_collection("read");
 
-        timethese( -2, {
+        run_test("update one w/ inc" => sub { $read_coll->update({}, {'$inc' => {"newField" => 123}}) } );
 
-            "update one w/ inc" => sub {
-                profile( sub { $read_coll->update({}, {'$inc' => {"newField" => 123}}) } );
-            },
+        run_test("update all w/ inc" => sub { $read_coll->update({}, {'$inc' => {"newField" => 123}}) }, {'multiple' => 1} );
 
-            "update all w/ inc" => sub {
-                profile( sub { $read_coll->update({}, {'$inc' => {"newField" => 123}}) }, {'multiple' => 1} );
-            },
+        run_test("update one w/ small doc" => sub { $read_coll->update({}, $dataset{smallest_doc}) } );
 
-            "update one w/ small doc" => sub {
-                profile( sub { $read_coll->update({}, $dataset{smallest_doc}) } );
-            },
-
-            "update one w/ large doc" => sub {
-                profile( sub { $read_coll->update({}, $dataset{largest_doc}) } );
-            },
-        });
+        run_test("update one w/ large doc", sub { $read_coll->update({}, $dataset{largest_doc}) } );
     }
 
 } else {
@@ -250,12 +249,7 @@ if ($dataset_path) {
 
             for my $benchmark (@$data) {
 
-                my $insert_func = sub {
-
-                    profile(sub { $encode_coll->insert($benchmark->[1]) });
-                };
-
-                timethis(-2, $insert_func, "insert $doc_size ".$benchmark->[0]);
+                run_test("insert $doc_size ".$benchmark->[0], sub { $encode_coll->insert($benchmark->[1]) } );
             }
         }
 
@@ -263,18 +257,13 @@ if ($dataset_path) {
         {
             for my $benchmark (@$data) {
 
-                my $find_func = sub {
-
-                    profile(sub {
+                run_test("find $doc_size ".$benchmark->[0], sub {
                         local $MongoDB::BSON::use_boolean = 1;
                         local $MongoDB::BSON::use_binary = 1;
                         $decode_coll->find_one({type => $benchmark->[0]});
                         $MongoDB::BSON::use_boolean = 0;
                         $MongoDB::BSON::use_binary = 0;
-                    });
-                };
-
-                timethis(-2, $find_func, "find $doc_size ".$benchmark->[0]);
+                });
             }
         }
     }
@@ -294,44 +283,36 @@ if ($dataset_path) {
         $grid->insert($fh, {"filename" => "4KiB"});
         $grid->insert($fh2, {"filename" => "500KiB"});
 
-        timethese( -2, {
+        run_test("insert 4kb file", sub {
 
-            "insert 4kb file" => sub {
+            open( my $tempfh, '<', \$str_4kib);
+            $grid->insert($tempfh);
+        });
+        run_test("insert 500kb file", sub {
 
-                open( my $tempfh, '<', \$str_4kib);
-                profile( sub { $grid->insert($tempfh) } );
-            },
+            open( my $tempfh, '<', \$str_500kib);
+            $grid->insert($tempfh);
+        });
+        run_test("find 4kb file", sub {
 
-            "insert 500kb file" => sub {
+            $grid->find_one({filename => "4KiB"});
+        });
+        run_test("find 500kb file", sub {
 
-                open( my $tempfh, '<', \$str_500kib);
-                profile( sub { $grid->insert($tempfh) } );
-            },
-
-            "find 4kb file" => sub {
-
-                open( my $tempfh, '<', \$str_4kib);
-                profile( sub { $grid->find_one({filename => "4KiB"}) } );
-            },
-
-            "find 500kb file" => sub {
-
-                open( my $tempfh, '<', \$str_500kib);
-                profile( sub { $grid->find_one({filename => "500KiB"}) } );
-            },
+            $grid->find_one({filename => "500KiB"});
         });
     }
 }
 
-# profile will only enable profiling if the user has requested it. Otherwise we
-# try to execute the function in question with as little overhead as possible in
-# order to get accurate benchmark times.
-sub profile {
+write_bench_results(\%bench_results) if $bench;
 
-    return &{$_[0]} unless $profile;
-    DB::enable_profile;
-    &{$_[0]};
-    DB::disable_profile;
+# run_test will run either benchmarking, profiling, or both on a given function
+sub run_test {
+
+    my ($test_name, $func) = @_;
+
+    $bench_results{$test_name} = timethis(-(CPU_RUN_TIME), $func, $test_name) if $bench;
+    &$func if $profile;
 }
 
 sub get_data_from_json {
@@ -390,9 +371,23 @@ sub create_dataset {
     return %dataset;
 }
 
+sub write_bench_results {
+
+    use Text::CSV_XS;
+
+    my %results = %{+shift};
+    my $csv = Text::CSV_XS->new;
+    $csv->eol ("\r\n");
+    open(my $fh, ">:encoding(utf8)", $bench_out) or die("Can't open $bench_out: $!\n");
+    while (my ($key, $value) = each %results) {
+
+        my @row = ($key, $value->cpu_p, $value->cpu_c, $value->cpu_a, $value->real, $value->iters);
+        $csv->print ($fh, \@row);
+    }
+}
+
 END {
 
     # Cleanup
-    DB::finish_profile if $profile;
     $db->drop if $db;
 }
