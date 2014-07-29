@@ -329,7 +329,7 @@ sub get_data_from_json {
     # Read schema
     my $schema;
     {
-        local $/;
+        local $/; # no delimiter so we read everything till EOF
         $schema = decode_json(<$schema_fh>);
     }
 
