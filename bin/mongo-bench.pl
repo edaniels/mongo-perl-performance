@@ -93,14 +93,18 @@ if ($dataset_path) {
     my %dataset = create_dataset(\@data);
     print "Dataset: " . file($dataset_path)->basename . ", size: $dataset_size\n";
 
+    my $read_coll = $db->get_collection("read");
+    my $insert_coll = $db->get_collection("inserts");
+
     # Fill db for read with dataset
     {
         print "Importing dataset...";
         STDOUT->flush();
 
-        my $read_coll = $db->get_collection("read");
         $read_coll->drop;
-        $read_coll->insert($_) for @{$dataset{all_docs}};
+        my $bulk = $read_coll->initialize_ordered_bulk_op;
+        $bulk->insert($_) for @{$dataset{all_docs}};
+        $bulk->execute;
         print " done\n";
     }
 
@@ -108,7 +112,6 @@ if ($dataset_path) {
     # These benchmarks should be bottlenecked by BSON encoding
     # based on the dataset provided.
     {
-        my $insert_coll = $db->get_collection("inserts");
 
         my @small_doc_some = ($dataset{smallest_doc}) x SOME_DOCS;
         my @small_doc_most = ($dataset{smallest_doc}) x MOST_DOCS;
@@ -119,17 +122,41 @@ if ($dataset_path) {
             ["single insert" => $dataset{single_doc}],
             ["batch insert ".SOME_DOCS." docs" => $dataset{some_docs}],
             ["batch insert ".MOST_DOCS." docs" => $dataset{most_docs}],
-            ["single insert small doc" => $dataset{smallest_doc}],
-            ["batch insert ".SOME_DOCS." small doc" => \@small_doc_some],
-            ["batch insert ".MOST_DOCS." small doc"=> \@small_doc_most],
-            ["single insert large doc" => $dataset{largest_doc}],
-            ["batch insert ".SOME_DOCS." large doc" => \@large_doc_some],
-            ["batch insert ".MOST_DOCS." large doc" => \@large_doc_most],
+            ["single insert small docs" => $dataset{smallest_doc}],
+            ["batch insert ".SOME_DOCS." small docs" => \@small_doc_some],
+            ["batch insert ".MOST_DOCS." small docs"=> \@small_doc_most],
+            ["single insert large docs" => $dataset{largest_doc}],
+            ["batch insert ".SOME_DOCS." large docs" => \@large_doc_some],
+            ["batch insert ".MOST_DOCS." large docs" => \@large_doc_most],
         ];
 
         for my $benchmark (@$data) {
 
             run_test($benchmark->[0], sub { $insert_coll->insert($benchmark->[1]) } );
+        }
+
+        # Bulk creation
+        {
+            my $bulk_data = [
+                ["all docs" => $dataset{all_docs}],
+                [SOME_DOCS." small docs" => \@small_doc_some],
+                [MOST_DOCS." small docs"=> \@small_doc_most],
+                [SOME_DOCS." large docs" => \@large_doc_some],
+                [MOST_DOCS." large docs" => \@large_doc_most],
+            ];
+
+            for my $method (qw/initialize_ordered_bulk_op initialize_unordered_bulk_op/) {
+
+                for my $benchmark (@$bulk_data) {
+
+                    run_test("$method on $benchmark->[0]", sub {
+
+                        my $bulk = $insert_coll->$method;
+                        $bulk->insert($_) for @{$benchmark->[1]};
+                        $bulk->execute;
+                    });
+                }
+            }
         }
     }
 
@@ -137,9 +164,6 @@ if ($dataset_path) {
     # These benchmarks should be bottlenecked by BSON decoding
     # based on the dataset provided.
     {
-        my $read_coll = $db->get_collection("read");
-
-
         run_test("find_one simple", sub { $read_coll->find_one } );
 
         run_test("find_one query", sub { $read_coll->find_one($schema->{find_spec}) } );
@@ -160,8 +184,6 @@ if ($dataset_path) {
     # Updating
     {
         # We're about to clobber read so these tests should be performed last.
-        my $read_coll = $db->get_collection("read");
-
         run_test("update one w/ inc" => sub { $read_coll->update({}, {'$inc' => {"newField" => 123}}) } );
 
         run_test("update all w/ inc" => sub { $read_coll->update({}, {'$inc' => {"newField" => 123}}) }, {'multiple' => 1} );
