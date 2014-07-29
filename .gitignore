@@ -20,4 +20,6 @@ nytprof.out
 
 scratch
 nytprof
-mongo-perl-prof.out
+*.out
+*.callgrind
+*.csv

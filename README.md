@@ -31,6 +31,10 @@
 
 # Profiler
 	
-* To view the data run:
+* To view the profiling data run:
 
 		nytprofhtml --open --file mongo-perl-prof.out
+
+* Optionally you can view the data in a call graph viewer like qcachegrind by running:
+
+		nytprofcg --file mongo-perl-prof.out --out mongo-perl-prof.callgrind
