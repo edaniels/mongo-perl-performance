@@ -20,6 +20,7 @@ use 5.008;
 use strict;
 use warnings;
 use Benchmark qw/:all/;
+use Path::Class qw/file/;
 use Devel::NYTProf;
 use Getopt::Long;
 use IO::Handle qw//;

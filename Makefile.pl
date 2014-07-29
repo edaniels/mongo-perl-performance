@@ -9,11 +9,12 @@ license 'Apache';
 version_from 'bin/mongo-bench.pl';
 install_script 'bin/mongo-bench.pl';
 
-requires 'IO::Handle';
-requires 'Getopt::Long';
 requires 'Benchmark';
 requires 'Devel::NYTProf';
+requires 'Getopt::Long';
+requires 'IO::Handle';
 requires 'JSON::XS';
+requires 'Path::Class';
 requires 'Pod::Usage';
 requires 'MongoDB';
 requires 'version';
