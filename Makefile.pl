@@ -16,7 +16,6 @@ requires 'IO::Handle';
 requires 'JSON::XS';
 requires 'Path::Class';
 requires 'Pod::Usage';
-requires 'MongoDB';
 requires 'Text::CSV_XS';
 requires 'version';
 

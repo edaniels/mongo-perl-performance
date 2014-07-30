@@ -64,6 +64,8 @@ Options:
     ) or pod2usage(2);
 
     $ENV{NYTPROF} = "file=$profile_out";
+
+    unshift(@INC, ('blib/lib', 'blib/arch'));
 }
 
 use Devel::NYTProf;
