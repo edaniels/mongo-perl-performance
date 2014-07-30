@@ -81,7 +81,8 @@ use MongoDB;
 use version;
 our $VERSION = 'v0.0.1';
 
-my $client = MongoDB::MongoClient->new;
+my $host = exists $ENV{MONGOD} ? $ENV{MONGOD} : 'localhost';
+my $client = MongoDB::MongoClient->new(host => $host);
 my $db = $client->get_database("benchdb");
 $db->drop;
 
