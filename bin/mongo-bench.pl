@@ -63,12 +63,16 @@ Options:
         "lines=i" => \$lines_to_read,
     ) or pod2usage(2);
 
-    $ENV{NYTPROF} = "file=$profile_out";
-
     unshift(@INC, ('blib/lib', 'blib/arch'));
+
+    if ($profile) {
+
+        $ENV{NYTPROF} = "file=$profile_out:";
+        require Devel::NYTProf;
+        Devel::NYTProf->import();
+    }
 }
 
-use Devel::NYTProf;
 use Benchmark qw/:all/;
 use Path::Class qw/file/;
 use IO::Handle qw//;
