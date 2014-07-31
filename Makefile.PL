@@ -16,7 +16,6 @@ requires 'IO::Handle';
 requires 'JSON::XS';
 requires 'Path::Class';
 requires 'Pod::Usage';
-requires 'Text::CSV_XS';
 requires 'version';
 
 repository 'git@github.com:edaniels/mongo-perl-performance.git';

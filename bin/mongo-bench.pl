@@ -39,7 +39,7 @@ Options:
     -profile            enable profiling
     -profileout         file to output profiling data to (default : mongo-perl-prof.out)
     -bench              enable benchmarking
-    -benchout           file to output benchmark data to (default: mongo-perl-bench.csv)
+    -benchout           file to output benchmark data to (default: report.json)
     -dataset            dataset to use. expects a schema to exist in the form of dataset.schema.json
     -lines              lines to read from dataset (default: 1000)
 
@@ -50,7 +50,7 @@ Options:
     $dataset_path = '';
     $lines_to_read = MOST_DOCS;
     $profile_out = 'mongo-perl-prof.out';
-    $bench_out = 'mongo-perl-bench.csv';
+    $bench_out = 'report.json';
 
     use Getopt::Long;
     use Pod::Usage;
@@ -402,16 +402,24 @@ sub create_dataset {
 
 sub write_bench_results {
 
-    use Text::CSV_XS;
-
     my %results = %{+shift};
-    my $csv = Text::CSV_XS->new;
-    $csv->eol ("\r\n");
-    open(my $fh, ">:encoding(utf8)", $bench_out) or die("Can't open $bench_out: $!\n");
+    my @docs;
     while (my ($key, $value) = each %results) {
 
-        my @row = ($key, $value->cpu_p, $value->cpu_c, $value->cpu_a, $value->real, $value->iters);
-        $csv->print ($fh, \@row);
+        push(@docs, {
+
+            title => $key,
+            rounds => 1,
+            iterations => $value->iters,
+            timeReal => $value->real,
+            timeUser => $value->cpu_a,
+            opsReal => $value->iters/$value->real,
+            opsUser => $value->iters/$value->cpu_a,
+        });
+    }
+    {
+        open(my $fh, ">:encoding(utf8)", $bench_out) or die("Can't open $bench_out: $!\n");
+        print $fh encode_json(\@docs);
     }
 }
 

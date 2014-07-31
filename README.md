@@ -19,7 +19,7 @@
 * **profile** - Setting bench will enable profiling (default: false)
 * **profileout** - File to save profiling output to (default: mongo-perl-perf.out)
 * **bench** - Setting bench will enable benchmarking (default: false)
-* **benchout** - File to save benchmaking CSV output to (default: mongo-perl-bench.csv)
+* **benchout** - File to save benchmaking json output to (default: report.json)
 
 # Schema.json
 
