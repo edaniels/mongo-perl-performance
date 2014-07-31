@@ -1,7 +1,7 @@
 # Requirements
 
 	* Module::Install is required to build and install the project
-	* mongod instance running at localhost:27017 (TODO: Let user specify via env/arg)
+	* mongod instance running at localhost:27017 or MONGOD environment variable set with appropriate URI
 
 # Installation
 

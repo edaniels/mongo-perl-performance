@@ -74,10 +74,10 @@ Options:
 }
 
 use Benchmark qw/:all/;
-use Path::Class qw/file/;
 use IO::Handle qw//;
 use JSON::XS;
 use MongoDB;
+use Path::Tiny;
 use version;
 our $VERSION = 'v0.0.1';
 
@@ -98,7 +98,7 @@ if ($dataset_path) {
 
     my ($dataset_size, $schema, @data) = get_data_from_json($dataset_path, $lines_to_read);
     my %dataset = create_dataset(\@data);
-    print "Dataset: " . file($dataset_path)->basename . ", size: $dataset_size\n";
+    print "Dataset: " . path($dataset_path)->basename . ", size: $dataset_size\n";
 
     my $read_coll = $db->get_collection("read");
     my $insert_coll = $db->get_collection("inserts");

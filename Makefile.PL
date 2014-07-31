@@ -14,7 +14,7 @@ requires 'Devel::NYTProf';
 requires 'Getopt::Long';
 requires 'IO::Handle';
 requires 'JSON::XS';
-requires 'Path::Class';
+requires 'Path::Tiny';
 requires 'Pod::Usage';
 requires 'version';
 
