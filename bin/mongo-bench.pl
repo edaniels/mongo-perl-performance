@@ -159,7 +159,7 @@ if ($dataset_path) {
                     run_test("$method on $benchmark->[0]", sub {
 
                         my $bulk = $insert_coll->$method;
-                        $bulk->insert($_) for @{$benchmark->[1], {w => 1}};
+                        $bulk->insert($_, {w => 1}) for @{$benchmark->[1]};
                         $bulk->execute;
                     });
                 }
