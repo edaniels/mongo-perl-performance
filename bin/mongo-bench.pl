@@ -82,7 +82,7 @@ use version;
 our $VERSION = 'v0.0.1';
 
 my $host = exists $ENV{MONGOD} ? $ENV{MONGOD} : 'localhost';
-my $client = MongoDB::MongoClient->new(host => $host);
+my $client = MongoDB::MongoClient->new(host => $host, w => 1);
 my $db = $client->get_database("benchdb");
 $db->drop;
 
@@ -139,7 +139,7 @@ if ($dataset_path) {
 
         for my $benchmark (@$data) {
 
-            run_test($benchmark->[0], sub { $insert_coll->insert($benchmark->[1]) } );
+            run_test($benchmark->[0], sub { $insert_coll->insert($benchmark->[1], {safe => 1}) } );
         }
 
         # Bulk creation
@@ -159,7 +159,7 @@ if ($dataset_path) {
                     run_test("$method on $benchmark->[0]", sub {
 
                         my $bulk = $insert_coll->$method;
-                        $bulk->insert($_) for @{$benchmark->[1]};
+                        $bulk->insert($_) for @{$benchmark->[1], {w => 1}};
                         $bulk->execute;
                     });
                 }
@@ -278,7 +278,7 @@ if ($dataset_path) {
 
             for my $benchmark (@$data) {
 
-                run_test("insert $doc_size ".$benchmark->[0], sub { $encode_coll->insert($benchmark->[1]) } );
+                run_test("insert $doc_size ".$benchmark->[0], sub { $encode_coll->insert($benchmark->[1], {safe => 1}) } );
             }
         }
 
@@ -315,12 +315,12 @@ if ($dataset_path) {
         run_test("insert 4kb file", sub {
 
             open( my $tempfh, '<', \$str_4kib);
-            $grid->insert($tempfh);
+            $grid->insert($tempfh, {safe => 1});
         });
         run_test("insert 500kb file", sub {
 
             open( my $tempfh, '<', \$str_500kib);
-            $grid->insert($tempfh);
+            $grid->insert($tempfh, {safe => 1});
         });
         run_test("find 4kb file", sub {
 
