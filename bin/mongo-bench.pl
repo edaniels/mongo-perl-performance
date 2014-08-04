@@ -127,14 +127,14 @@ if ($dataset_path) {
 
         my $data = [
             ["single insert" => $dataset{single_doc}],
-            ["batch insert ".SOME_DOCS." docs" => $dataset{some_docs}],
-            ["batch insert ".MOST_DOCS." docs" => $dataset{most_docs}],
-            ["single insert small docs" => $dataset{smallest_doc}],
-            ["batch insert ".SOME_DOCS." small docs" => \@small_doc_some],
-            ["batch insert ".MOST_DOCS." small docs"=> \@small_doc_most],
-            ["single insert large docs" => $dataset{largest_doc}],
-            ["batch insert ".SOME_DOCS." large docs" => \@large_doc_some],
-            ["batch insert ".MOST_DOCS." large docs" => \@large_doc_most],
+            ["batch insert ".SOME_DOCS." documents" => $dataset{some_docs}],
+            ["batch insert ".MOST_DOCS." documents" => $dataset{most_docs}],
+            ["single insert smallest document" => $dataset{smallest_doc}],
+            ["batch insert ".SOME_DOCS." small documents" => \@small_doc_some],
+            ["batch insert ".MOST_DOCS." small documents"=> \@small_doc_most],
+            ["single insert largest document" => $dataset{largest_doc}],
+            ["batch insert ".SOME_DOCS." large documents" => \@large_doc_some],
+            ["batch insert ".MOST_DOCS." large documents" => \@large_doc_most],
         ];
 
         for my $benchmark (@$data) {
@@ -145,11 +145,11 @@ if ($dataset_path) {
         # Bulk creation
         {
             my $bulk_data = [
-                ["all docs" => $dataset{all_docs}],
-                [SOME_DOCS." small docs" => \@small_doc_some],
-                [MOST_DOCS." small docs"=> \@small_doc_most],
-                [SOME_DOCS." large docs" => \@large_doc_some],
-                [MOST_DOCS." large docs" => \@large_doc_most],
+                ["all documents" => $dataset{all_docs}],
+                [SOME_DOCS." small documents" => \@small_doc_some],
+                [MOST_DOCS." small documents"=> \@small_doc_most],
+                [SOME_DOCS." large documents" => \@large_doc_some],
+                [MOST_DOCS." large documents" => \@large_doc_most],
             ];
 
             for my $method (qw/initialize_ordered_bulk_op initialize_unordered_bulk_op/) {
@@ -195,9 +195,9 @@ if ($dataset_path) {
 
         run_test("update all w/ inc" => sub { $read_coll->update({}, {'$inc' => {"newField" => 123}}) }, {'multiple' => 1} );
 
-        run_test("update one w/ small doc" => sub { $read_coll->update({}, $dataset{smallest_doc}) } );
+        run_test("update one w/ small documents" => sub { $read_coll->update({}, $dataset{smallest_doc}) } );
 
-        run_test("update one w/ large doc", sub { $read_coll->update({}, $dataset{largest_doc}) } );
+        run_test("update one w/ large documents", sub { $read_coll->update({}, $dataset{largest_doc}) } );
     }
 
 } else {
