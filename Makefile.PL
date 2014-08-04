@@ -6,8 +6,8 @@ name 'MongoDB-Performance';
 perl_version '5.8.4';
 author 'Eric Daniels <eric.daniels@mongodb.com';
 license 'Apache';
-version_from 'bin/mongo-bench.pl';
-install_script 'bin/mongo-bench.pl';
+install_script ('bin/mongo-bench.pl', 'bin/bson-bench.pl');
+all_from 'lib/MongoBench.pm';
 
 requires 'Benchmark';
 requires 'Devel::NYTProf';
