@@ -10,6 +10,7 @@ install_script ('bin/mongo-bench.pl', 'bin/bson-bench.pl');
 all_from 'lib/MongoBench.pm';
 
 requires 'Benchmark';
+requires 'BSON';
 requires 'Devel::NYTProf';
 requires 'Getopt::Long';
 requires 'IO::Handle';
