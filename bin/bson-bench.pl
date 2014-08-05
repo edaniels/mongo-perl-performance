@@ -25,6 +25,8 @@ use MongoBench qw/get_dataset run_test MOST_DOCS SOME_DOCS/;
 use BSON qw/encode decode/;
 use DateTime;
 
+print "BSON $BSON::VERSION, Perl v$]\n";
+
 my ($schema, %dataset) = get_dataset();
 if (%dataset) {
 
