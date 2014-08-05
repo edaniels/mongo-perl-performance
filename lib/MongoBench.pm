@@ -27,7 +27,7 @@ use constant {
     CPU_RUN_TIME => 2,
 };
 
-my ($profile, $bench, $dataset_path, $lines_to_read, $profile_out, $bench_out);
+my ($profile, $bench, $dataset_path, $lines_to_read, $profile_out, $bench_out, $bench_uri, $bench_db, $bench_coll);
 
 BEGIN {
 
@@ -42,6 +42,9 @@ Options:
     -benchout           file to output benchmark data to (default: report.json)
     -dataset            dataset to use. expects a schema to exist in the form of dataset.schema.json
     -lines              lines to read from dataset (default: 1000)
+    -benchuri           MongoDB Connection String pointing to host to store benchmark results with
+    -benchdb            DB to store benchmark results in (default: bench_results)
+    -benchcoll          Collection to store benchmark results in (default: perl)
 
 =cut
 
@@ -51,6 +54,9 @@ Options:
     $lines_to_read = MOST_DOCS;
     $profile_out = 'mongo-perl-prof.out';
     $bench_out = 'report.json';
+    $bench_uri = '';
+    $bench_db = 'bench_results';
+    $bench_coll = 'perl';
 
     use Getopt::Long;
     use Pod::Usage;
@@ -61,6 +67,9 @@ Options:
         "benchout=s" => \$bench_out,
         "dataset=s" => \$dataset_path,
         "lines=i" => \$lines_to_read,
+        "benchuri=s" => \$bench_uri,
+        "benchdb=s" => \$bench_db,
+        "benchcoll=s" => \$bench_coll,
     ) or pod2usage(2);
 
     unshift(@INC, ('blib/lib', 'blib/arch'));
@@ -165,7 +174,7 @@ sub create_dataset {
     return %dataset;
 }
 
-sub write_bench_results {
+sub store_bench_results {
 
     my %results = %{+shift};
     my @docs;
@@ -182,15 +191,33 @@ sub write_bench_results {
             opsUser => $value->iters/$value->cpu_a,
         });
     }
+
+    if ($bench_uri) {
+
+        use MongoDB;
+        my $results_coll = MongoDB::MongoClient->new({host => $bench_uri})->get_database($bench_db)->get_collection($bench_coll);
+        my $bulk = $results_coll->initialize_unordered_bulk_op;
+        $bulk->insert($_) for (@docs);
+        $bulk->execute;
+
+    } else {
+
+        write_bench_results(\@docs);
+    }
+}
+
+sub write_bench_results {
+
+    my $docs = shift;
     {
         open(my $fh, ">:encoding(utf8)", $bench_out) or die("Can't open $bench_out: $!\n");
-        print $fh encode_json(\@docs);
+        print $fh encode_json($docs);
     }
 }
 
 END {
 
-    write_bench_results(\%bench_results) if $bench;
+    store_bench_results(\%bench_results) if $bench;
 }
 
 1;

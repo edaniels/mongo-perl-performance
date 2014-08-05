@@ -15,6 +15,7 @@ requires 'Devel::NYTProf';
 requires 'Getopt::Long';
 requires 'IO::Handle';
 requires 'JSON::XS';
+requires 'MongoDB';
 requires 'Path::Tiny';
 requires 'Pod::Usage';
 requires 'version';
