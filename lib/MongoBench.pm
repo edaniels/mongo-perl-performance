@@ -200,10 +200,9 @@ sub store_bench_results {
         $bulk->insert($_) for (@docs);
         $bulk->execute;
 
-    } else {
-
-        write_bench_results(\@docs);
-    }
+    } 
+    
+    write_bench_results(\@docs) if $bench_out;
 }
 
 sub write_bench_results {

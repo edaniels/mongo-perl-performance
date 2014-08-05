@@ -10,7 +10,7 @@
 
 # Usage
 
-	mongo-bench.pl [-dataset file.json] [-line] [-profile] [-profileout] [-bench] [-benchout]
+	mongo-bench.pl [-dataset [-line]] < [-profile [-profileout]] | [-bench [-benchout]|[-benchuri [-benchdb] [-benchcoll]]] >
 	
 * **dataset** - Represents the dataset to use for the benchmark. Needs to be in JSON format delimited by new lines
 	* A file.schema.json must be present where it is a json document containing certain documents.
@@ -20,6 +20,9 @@
 * **profileout** - File to save profiling output to (default: mongo-perl-perf.out)
 * **bench** - Setting bench will enable benchmarking (default: false)
 * **benchout** - File to save benchmaking json output to (default: report.json)
+* **benchuri** - MongoDB Connection String pointing to host to store benchmark results with
+* **benchdb** - DB to store benchmark results in (default: bench_results)
+* **benchcoll** - Collection to store benchmark results in (default: perl)
 
 # Schema.json
 
