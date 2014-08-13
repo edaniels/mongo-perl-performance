@@ -12,11 +12,14 @@
 * It is also assumed that this repository has been cloned into $HOME/driver-perf/perl
 * Password will be prompted for while running:
 
-	./install.sh 5.18.2
+		./install.sh 5.18.2
+		exec $SHELL -l
 
 # Usage
 
-	mongo-bench.pl [-dataset [-line]] < [-profile [-profileout]] | [-bench [-benchout]|[-benchuri [-benchdb] [-benchcoll]]] >
+* Your current working directory should be within the perl driver that you want to test otherwise you will get a compilation error.
+
+		mongo-bench.pl [-dataset [-lines]] < [-profile [-profileout]] | [-bench [-benchout]|[-benchuri [-benchdb] [-benchcoll]]] >
 	
 * **dataset** - Represents the dataset to use for the benchmark. Needs to be in JSON format delimited by new lines
 	* A file.schema.json must be present where it is a json document containing certain documents.
