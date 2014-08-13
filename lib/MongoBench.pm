@@ -17,6 +17,7 @@
 #
 
 use 5.008;
+use blib;
 use strict;
 use warnings;
 
@@ -71,8 +72,6 @@ Options:
         "benchdb=s" => \$bench_db,
         "benchcoll=s" => \$bench_coll,
     ) or pod2usage(2);
-
-    unshift(@INC, ('blib/lib', 'blib/arch'));
 
     if ($profile) {
 
