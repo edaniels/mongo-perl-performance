@@ -1,12 +1,18 @@
 # Requirements
 
-	* Module::Install is required to build and install the project
 	* mongod instance running at localhost:27017 or MONGOD environment variable set with appropriate URI
 
 # Installation
 
-	perl Makefile.PL
-	make install
+## First time installation
+
+* The install.sh script will setup plenv with a globally specified version of perl.
+* This will also setup the benchmark tool.
+* It is assumed that the machine is running Ubuntu with bash.
+* It is also assumed that this repository has been cloned into $HOME/driver-perf/perl
+* Password will be prompted for while running:
+
+	./install.sh 5.18.2
 
 # Usage
 
@@ -41,3 +47,9 @@
 * Optionally you can view the data in a call graph viewer like qcachegrind by running:
 
 		nytprofcg --file mongo-perl-prof.out --out mongo-perl-prof.callgrind
+
+# Working with the Repository
+
+	perl Makefile.PL
+	make
+	make test
